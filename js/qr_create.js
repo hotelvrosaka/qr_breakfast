@@ -1,24 +1,28 @@
 // --- Name suggestion feature: guest name list fetch and suggestion box ---
-let cachedNameList = [];
-// ⏱️ 이름 목록 마지막 갱신 시간
-let lastNameListFetchedAt = null;
+let cachedGuestList = [];
+let lastGuestListFetchedAt = null;
 
-function fetchGuestNameList() {
+function fetchGuestFullList() {
   const script = document.createElement("script");
-  const callback = "handleGuestNameList";
-  const query = `mode=guestNameList&callback=${callback}`;
+  const callback = "handleGuestFullList";
+  const query = `mode=guestFullList&callback=${callback}`;
   script.src = `${getSheetApiUrl()}?${query}`;
   showUpdatingOverlay();
   document.body.appendChild(script);
-  lastNameListFetchedAt = new Date(); // ⏱️ fetch 시간 기록
+  lastGuestListFetchedAt = new Date();
 }
 
-window.handleGuestNameList = function(response) {
+window.handleGuestFullList = function(response) {
   if (response.success && Array.isArray(response.list)) {
-    cachedNameList = response.list;
-    console.log("✅ 이름 목록 불러오기 완료:", cachedNameList);
+    if (response.list.length === 0) {
+      console.warn("⚠️ 게스트 전체 목록이 비어 있습니다。갱신 중지");
+      removeSearchOverlay();
+      return;
+    }
+    cachedGuestList = response.list;
+    console.log("✅ 게스트 전체 목록 불러오기 완료:", cachedGuestList);
   } else {
-    console.error("❌ 이름 목록 오류", response.error);
+    console.error("❌ 게스트 전체 목록 오류", response.error);
   }
   removeSearchOverlay();
 };
@@ -79,7 +83,7 @@ async function generateHashFromObject({ room, checkIn, checkOut }) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 8);
 }
-const getSheetApiUrl = () => 'https://script.google.com/macros/s/AKfycbybofPeHNQN7cxiX0_p6CLPN92xy1Bd-zruU6R0CFffOIYjOySoZEDbbIOVWU9Fik0YLw/exec';
+const getSheetApiUrl = () => 'https://script.google.com/macros/s/AKfycbwApxm8xTJ_wRU78n0mXT6jaO4Dv7mKHAxOKuWyQIIYyLcW4nrjShnOZJnn8KcSN-xBag/exec';
 const wanakanaScript = document.createElement("script");
 wanakanaScript.src = "https://unpkg.com/wanakana";
 document.head.appendChild(wanakanaScript);
@@ -115,8 +119,8 @@ function kanaFullToHalf(str){
 }
 
 wanakanaScript.onload = () => {
-  // --- Fetch guest name list for suggestions on page load ---
-  fetchGuestNameList();
+  // --- Fetch guest full list for suggestions and search on page load ---
+  fetchGuestFullList();
 
   const searchBtName = document.getElementById("searchBtName");
   if (searchBtName) {
@@ -134,15 +138,14 @@ wanakanaScript.onload = () => {
         (hour === 14 && minute >= 30) || // 14:30~
         (hour >= 15 && hour <= 23);      // 15:00~23:00
 
-      const isNewHour = minute === 0; // 정각 여부
-      const shouldRefresh = isRefreshHour && (!lastNameListFetchedAt || lastNameListFetchedAt.getHours() !== hour);
+      const shouldRefresh = isRefreshHour && (!lastGuestListFetchedAt || lastGuestListFetchedAt.getHours() !== hour);
 
       if (shouldRefresh) {
-        console.log("⏱️ 검색 전 이름 정보 갱신 실행");
-        fetchGuestNameList();
+        console.log("⏱️ 검색 전 게스트 전체 목록 갱신 실행");
+        fetchGuestFullList();
       }
 
-      // --- Show search overlay before sending requests ---
+      // --- Show search overlay before searching ---
       showSearchOverlay();
 
       console.log("🧪 名前検索クリック");
@@ -150,7 +153,6 @@ wanakanaScript.onload = () => {
       console.log("🔍 検索対象の入力:", baseInput);
       if (!baseInput) {
         alert("名前を入力してください。");
-        // Remove overlay if input is empty and early return
         removeSearchOverlay();
         return;
       }
@@ -164,24 +166,22 @@ wanakanaScript.onload = () => {
 
       const searchTerms = Array.from(new Set([
         normalize(baseInput),
-        halfKana, // use raw half-width kana instead of normalize
+        halfKana,
         normalize(romajiInput)
       ]));
       console.log("🔍 生成された検索語一覧:", searchTerms);
 
-      pendingNameRequests = searchTerms.length;
-      foundResults = [];
-
-      searchTerms.forEach(term => {
-        // --- Logging for name search JSONP ---
-        console.log("📤 Sending search term to GAS:", term);
-        const script = document.createElement("script");
-        const apiUrl = getSheetApiUrl();
-        const query = `mode=searchName&callback=handleSearchResult&name=${encodeURIComponent(term)}`;
-        script.src = `${apiUrl}?${query}`;
-        console.log("📤 Full script URL:", script.src);
-        document.body.appendChild(script);
+      // --- Filter from cachedGuestList synchronously ---
+      let foundResults = [];
+      cachedGuestList.forEach(guest => {
+        if (!guest.searchName) return;
+        const guestSearchName = String(guest.searchName).toLowerCase();
+        if (searchTerms.some(term => guestSearchName.includes(term))) {
+          foundResults.push(guest);
+        }
       });
+
+      handleSearchResult({ success: true, matches: foundResults });
     });
   }
 
@@ -200,22 +200,22 @@ wanakanaScript.onload = () => {
 
       showSearchOverlay();
       const searchTerm = normalize(baseInput);
-      // --- Logging for room search JSONP ---
-      console.log("📤 Sending room term to GAS:", searchTerm);
-      const script = document.createElement("script");
-      const apiUrl = getSheetApiUrl();
-      const query = `mode=searchRoom&callback=handleRoomSearchResult&room=${encodeURIComponent(searchTerm)}`;
-      script.src = `${apiUrl}?${query}`;
-      console.log("📤 Full script URL:", script.src);
-      document.body.appendChild(script);
+      let foundResults = [];
+
+      cachedGuestList.forEach(guest => {
+        if (!guest.room) return;
+        const guestRoom = String(guest.room).toLowerCase();
+        if (guestRoom.includes(searchTerm)) {
+          foundResults.push(guest);
+        }
+      });
+
+      handleRoomSearchResult({ success: true, matches: foundResults });
     });
   }
 };
 
 
-// JSONP callback for upload responses
-let pendingNameRequests = 0;
-let foundResults = [];
 
 function toHalfWidth(str) {
   // Convert full-width A-Z, a-z, 0-9 to half-width
@@ -265,53 +265,48 @@ function fillFormWithData(data) {
 }
 
 window.handleSearchResult = function(response) {
+  // Remove search overlay
+  removeSearchOverlay();
   console.log("🔍 検索結果:", response);
-  pendingNameRequests--;
-
-  const data = response.success ? (response.matches || []) : [];
-  if (response.success && data.length > 0) {
-    foundResults.push(...data);
+  const foundResults = response.success ? (response.matches || []) : [];
+  if (!response.success || foundResults.length === 0) {
+    alert("一致する名前が見つかりませんでした。");
+    return;
   }
 
-  if (pendingNameRequests === 0) {
-    // Remove search overlay
-    removeSearchOverlay();
+  if (foundResults.length === 1) {
+    fillFormWithData(foundResults[0]);
+  } else {
+    // Format date as MM/DD for display
+    const formatToMMDD = (dateStr) => {
+      const date = new Date(dateStr);
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${mm}/${dd}`;
+    };
+    // Show custom select popup instead of prompt
+    const popup = document.getElementById("customSelectPopup");
+    const optionList = document.getElementById("popupOptions");
+    optionList.innerHTML = ""; // Clear previous
 
-    if (foundResults.length === 0) {
-      alert("一致する名前が見つかりませんでした。");
-      return;
-    }
-
-    if (foundResults.length === 1) {
-      fillFormWithData(foundResults[0]);
-    } else {
-      // Format date as MM/DD for display
-      const formatToMMDD = (dateStr) => {
-        const date = new Date(dateStr);
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        return `${mm}/${dd}`;
-      };
-      // Show custom select popup instead of prompt
-      const popup = document.getElementById("customSelectPopup");
-      const optionList = document.getElementById("popupOptions");
-      optionList.innerHTML = ""; // Clear previous
-
-      foundResults.forEach((item, index) => {
-        const li = document.createElement("li");
-        li.textContent = `${item.name}, #${item.room}, ${formatToMMDD(item.checkIn)} - ${formatToMMDD(item.checkOut)}`;
-        li.addEventListener("click", () => {
-          fillFormWithData(item);
-          closeSelectPopup();
-        });
-        optionList.appendChild(li);
+    foundResults.forEach((item, index) => {
+      const li = document.createElement("li");
+      li.textContent = `${item.name}, #${item.room}, ${formatToMMDD(item.checkIn)} - ${formatToMMDD(item.checkOut)}`;
+      li.addEventListener("click", () => {
+        fillFormWithData(item);
+        closeSelectPopup();
       });
+      optionList.appendChild(li);
+    });
 
-      popup.style.display = "flex";
-    }
-
-    // Reset after handling
-    foundResults = [];
+    popup.style.display = "flex";
+    // ✅ Allow clicking outside popup content to close the popup (not trigger selection)
+    const customPopup = document.getElementById("customSelectPopup");
+    customPopup.addEventListener("click", function (e) {
+      if (e.target === customPopup) {
+        closeSelectPopup();
+      }
+    });
   }
 };
 
@@ -389,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInputs = [katakanaInput, romajiInput];
     const matchMap = {};
 
-    cachedNameList.forEach(({ name, searchName }) => {
+    cachedGuestList.forEach(({ name, searchName }) => {
       if (searchName && searchInputs.some(inp => searchName.includes(inp))) {
         if (!matchMap[name]) matchMap[name] = 0;
         matchMap[name]++;
@@ -461,17 +456,15 @@ document.addEventListener("DOMContentLoaded", () => {
     popupQR.innerHTML = "";
     new QRCode(popupQR, {
       text: qrText,
-      width: 220,
-      height: 220,
+      width: 300,
+      height: 300,
       correctLevel: QRCode.CorrectLevel.H
     });
     document.getElementById("qrOverlay").style.display = "flex";
-    // Make overlay dismissible by clicking outside the popup
+    // Make overlay dismissible by clicking anywhere on the overlay (including the popup)
     const qrOverlay = document.getElementById("qrOverlay");
-    qrOverlay.addEventListener("click", function (e) {
-      if (e.target === qrOverlay) {
-        qrOverlay.style.display = "none";
-      }
+    qrOverlay.addEventListener("click", function () {
+      qrOverlay.style.display = "none";
     });
   });
 

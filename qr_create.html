@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>QR朝食券</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="QR朝食券" />
+  <link rel="apple-touch-icon" href="image/qr_create.png" />
 
   <link rel="stylesheet" href="css/qr_create.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -13,7 +17,7 @@
 <body>  
 
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
-    <h1 style="font-size: 22px; margin: 0;">QRコード生成</h1>
+    <h1 style="font-size: 22px; margin: 0; cursor: pointer;" onclick="location.reload();">QRコード生成</h1>
     <div class="inline-buttons">
       <button type="button" id="uploadBtn">アップロード</button>
     </div>
@@ -68,7 +72,7 @@
 
       <!-- ✅ 정보 + QR 코드 나란히 표시 -->
       <div id="qrInfoBox" style="display: flex; gap: 30px; align-items: center; margin-top: 30px;">
-        <div id="qrTextInfo" style="font-size: 15px; line-height: 1.8;"></div>
+        <div id="qrTextInfo" style="font-size: 18px; line-height: 1.8;"></div>
         <div id="qrResult"></div>
       </div>
     </section>
@@ -98,15 +102,15 @@
   <!-- ✅ 팝업용 QR 티켓 오버레이 -->
   <div id="qrOverlay" class="overlay" style="display: none;">
     <div class="popup">
-      <div id="popupText" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;"></div>
-      <div id="popupQR" style="margin-bottom: 20px;"></div>
+      <div id="popupText"></div>
+      <div id="popupQR"></div>
     </div>
   </div>
 
   <div id="customSelectPopup" class="overlay" style="display: none;">
     <div class="popup">
       <p id="popupTitle">一致する候補を選んでください:</p>
-      <ul id="popupOptions" style="list-style: none; padding: 0; margin-top: 10px;"></ul>
+      <ul id="popupOptions" style="list-style: none; padding: 0; margin-top: 10px; max-height: 250px; overflow-y: auto;"></ul>
       <button onclick="closeSelectPopup()">キャンセル</button>
     </div>
   </div>

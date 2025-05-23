@@ -15,8 +15,8 @@ function doGet(e) {
       return handleBreakfastSubmit(e, callback);
     case "verifyReservation":
       return handleVerifyReservation(e, callback);
-    case "searchName":
-      return handleSearchByName(e, callback);
+    // case "searchName":
+    //   return handleSearchByName(e, callback);
     case "searchRoom":
       return handleSearchByRoom(e, callback);
     case "importCsv":
@@ -25,6 +25,10 @@ function doGet(e) {
       return handleFetchStats(e, callback);
     case "guestNameList":
       return handleGuestNameList(e, callback);
+    case "guestFullList":
+      return handleGuestFullList(e, callback);
+    case "reservationList":
+      return handleReservationList(e, callback);
     default:
       return handleDefault(e, callback);
   }
@@ -79,33 +83,33 @@ function handleVerifyReservation(e, callback) {
   }
 }
 
-function handleSearchByName(e, callback) {
-  try {
-    const searchKey = e.parameter.name.toLowerCase().replace(/\s+/g, '');
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
-    if (!sheet) throw new Error("guest_list not found");
-    const data = sheet.getDataRange().getValues();
-    const matches = data.filter((row, index) => {
-      if (index === 0) return false;
-      const rowKey = (row[7] || "").toLowerCase().replace(/\s+/g, '');
-      return rowKey.includes(searchKey);
-    }).map(row => ({
-      reservation: row[0],
-      room: row[1],
-      name: row[2],
-      checkIn: row[3],
-      checkOut: row[4],
-      guestCount: row[5],
-      breakfastFlag: row[6],
-      searchName: row[7],
-      unpaid: row[8],
-      memo: row[9]
-    }));
-    return jsonpResponse(callback, { success: true, matches });
-  } catch (err) {
-    return jsonpResponse(callback, { success: false, error: err.message });
-  }
-}
+// function handleSearchByName(e, callback) {
+//   try {
+//     const searchKey = e.parameter.name.toLowerCase().replace(/\s+/g, '');
+//     const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
+//     if (!sheet) throw new Error("guest_list not found");
+//     const data = sheet.getDataRange().getValues();
+//     const matches = data.filter((row, index) => {
+//       if (index === 0) return false;
+//       const rowKey = (row[7] || "").toLowerCase().replace(/\s+/g, '');
+//       return rowKey.includes(searchKey);
+//     }).map(row => ({
+//       reservation: row[0],
+//       room: row[1],
+//       name: row[2],
+//       checkIn: row[3],
+//       checkOut: row[4],
+//       guestCount: row[5],
+//       breakfastFlag: row[6],
+//       searchName: row[7],
+//       unpaid: row[8],
+//       memo: row[9]
+//     }));
+//     return jsonpResponse(callback, { success: true, matches });
+//   } catch (err) {
+//     return jsonpResponse(callback, { success: false, error: err.message });
+//   }
+// }
 
 function handleSearchByRoom(e, callback) {
   try {
@@ -289,6 +293,46 @@ function handleGuestNameList(e, callback) {
       searchName: (row[7] || "").toLowerCase()
     }));
     return jsonpResponse(callback, { success: true, list });
+  } catch (err) {
+    return jsonpResponse(callback, { success: false, error: err.message });
+  }
+}
+
+function handleGuestFullList(e, callback) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
+    const data = sheet.getDataRange().getValues();
+    const fullList = data.slice(1).map(row => {
+      const reservationRaw = String(row[0] || "").trim();
+      const reservationKey = reservationRaw.split(/[-_]/)[0].toLowerCase();
+      return {
+        reservation: reservationRaw,
+        reservationKey,
+        room: row[1],
+        name: row[2],
+        checkIn: row[3],
+        checkOut: row[4],
+        guestCount: row[5],
+        breakfastFlag: row[6],
+        searchName: (row[7] || "").toLowerCase(),
+        unpaid: row[8],
+        memo: row[9]
+      };
+    });
+    return jsonpResponse(callback, { success: true, list: fullList });
+  } catch (err) {
+    return jsonpResponse(callback, { success: false, error: err.message });
+  }
+}
+
+function handleReservationList(e, callback) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
+    const data = sheet.getDataRange().getValues();
+    const reservations = data.slice(1).map(row =>
+      String(row[0] || "").trim().split(/[-_]/)[0].toLowerCase()
+    );
+    return jsonpResponse(callback, { success: true, reservations });
   } catch (err) {
     return jsonpResponse(callback, { success: false, error: err.message });
   }

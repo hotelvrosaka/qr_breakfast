@@ -174,7 +174,7 @@ body {
 
 .popup {
   background: white;
-  padding: 40px;
+  padding: 0px;
   border-radius: 16px;
   text-align: center;
   box-shadow: 0 0 15px rgba(255,255,255,0.3);
@@ -281,4 +281,12 @@ h1 {
 
 label {
   pointer-events: none;
+}
+/* Enlarged and styled popupText block */
+#popupText {
+  font-size: 20px;
+  line-height: 1.8;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
 }

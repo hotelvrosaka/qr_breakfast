@@ -1,5 +1,25 @@
-const SCRIPT_BASE_URL = "https://script.google.com/macros/s/AKfycbybofPeHNQN7cxiX0_p6CLPN92xy1Bd-zruU6R0CFffOIYjOySoZEDbbIOVWU9Fik0YLw/exec";
+const SCRIPT_BASE_URL = "https://script.google.com/macros/s/AKfycbwApxm8xTJ_wRU78n0mXT6jaO4Dv7mKHAxOKuWyQIIYyLcW4nrjShnOZJnn8KcSN-xBag/exec";
+let reservationSet = new Set();
+
+function preloadReservationList() {
+  const callback = "handleReservationList";
+  const query = `mode=reservationList&callback=${callback}`;
+  const script = document.createElement("script");
+  script.src = `${SCRIPT_BASE_URL}?${query}`;
+  document.body.appendChild(script);
+}
+
+window.handleReservationList = function(response) {
+  if (response.success && Array.isArray(response.reservations)) {
+    reservationSet = new Set(response.reservations);
+    console.log("📥 예약번호 리스트 로컬에 저장됨:", reservationSet);
+  } else {
+    console.warn("⚠️ 예약번호 리스트 불러오기 실패");
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
+  preloadReservationList();
   // --- Message strings for alerts ---
   const messages = {
     alreadyHadBreakfast: {
@@ -117,10 +137,10 @@ document.addEventListener("DOMContentLoaded", () => {
     html5QrCode.start(
       { facingMode: "user" },
       {
-        fps: 10,
+        fps: 15,
         qrbox: function(viewfinderWidth, viewfinderHeight) {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const boxSize = Math.floor(minEdge * 0.7);
+          const boxSize = Math.floor(minEdge * 0.85);
           return { width: boxSize, height: boxSize };
         }
       },
@@ -240,70 +260,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const loading = document.getElementById("loadingOverlay");
       if (loading) loading.style.display = "flex";
-      fetch(`${SCRIPT_BASE_URL}?mode=verifyReservation&verifyReservation=${reservation}&callback=verifyCallback`)
-        .then(response => response.text())
-        .then(text => {
-          if (loading) loading.style.display = "none";
-          const jsonText = text.replace(/^.*?\(/, "").replace(/\);?$/, "");
-          const result = JSON.parse(jsonText);
+      // --- Local lookup for reservation number in reservationSet ---
+      const isValidReservation = reservationSet.has(reservation.toLowerCase().split(/[-_]/)[0]);
 
-          if (!result.success || !result.exists) {
-            showCustomAlert(`${messages.confirmAtFront.ja}\n${messages.confirmAtFront.en}`);
-            lastScannedText = "";
-            return;
-          }
+      if (!isValidReservation) {
+        if (loading) loading.style.display = "none";
+        showCustomAlert(`${messages.confirmAtFront.ja}\n${messages.confirmAtFront.en}`);
+        lastScannedText = "";
+        return;
+      }
+      if (loading) loading.style.display = "none";
 
-          const localData = JSON.parse(localStorage.getItem("waitingList") || "[]");
-          const matchingEntries = localData.filter(entry => entry.split(",")[0] === room);
-          const totalGuestsSoFar = matchingEntries.reduce((sum, entry) => {
-            const status = entry.split(",")[3];
-            return sum + (status === "1" ? parseInt(entry.split(",")[1]) : 0);
-          }, 0);
+      const localData = JSON.parse(localStorage.getItem("waitingList") || "[]");
+      const matchingEntries = localData.filter(entry => entry.split(",")[0] === room);
+      const totalGuestsSoFar = matchingEntries.reduce((sum, entry) => {
+        const status = entry.split(",")[3];
+        return sum + (status === "1" ? parseInt(entry.split(",")[1]) : 0);
+      }, 0);
 
-          const remainingGuests = parseInt(guests) - totalGuestsSoFar;
-          if (remainingGuests <= 0) {
-            showCustomAlert(`${room}号は${messages.alreadyHadBreakfast.ja}\n${messages.alreadyHadBreakfast.en}`);
-            lastScannedText = "";
-            return;
-          }
+      const remainingGuests = parseInt(guests) - totalGuestsSoFar;
+      if (remainingGuests <= 0) {
+        showCustomAlert(`${room}号は${messages.alreadyHadBreakfast.ja}\n${messages.alreadyHadBreakfast.en}`);
+        lastScannedText = "";
+        return;
+      }
 
-          window.currentRoomText = room;
-          window.maxGuestsFromQR = remainingGuests;
-          document.getElementById("guestCountInput").value = remainingGuests;
-          document.getElementById("customPromptOverlay").style.display = "flex";
-          const promptLabel = document.getElementById("customPromptLabel");
-          if (promptLabel) {
-            promptLabel.innerText = "朝食を取る人数を入力してください。\nPlease enter the number of guests for breakfast.";
-          }
-          const cancelBtn = document.getElementById("customPromptCancel");
-          const confirmBtn = document.getElementById("customPromptConfirm");
-          if (cancelBtn) cancelBtn.innerHTML = "キャンセル<br>Cancel";
-          if (confirmBtn) confirmBtn.innerHTML = "確定<br>Confirm";
-          document.getElementById("guestCountInput").focus();
+      window.currentRoomText = room;
+      window.maxGuestsFromQR = remainingGuests;
+      document.getElementById("guestCountInput").value = remainingGuests;
+      document.getElementById("customPromptOverlay").style.display = "flex";
+      const promptLabel = document.getElementById("customPromptLabel");
+      if (promptLabel) {
+        promptLabel.innerText = "朝食を取る人数を入力してください。\nPlease enter the number of guests for breakfast.";
+      }
+      const cancelBtn = document.getElementById("customPromptCancel");
+      const confirmBtn = document.getElementById("customPromptConfirm");
+      if (cancelBtn) cancelBtn.innerHTML = "キャンセル<br>Cancel";
+      if (confirmBtn) confirmBtn.innerHTML = "確定<br>Confirm";
+      document.getElementById("guestCountInput").focus();
 
-          const inputEl = document.getElementById("guestCountInput");
-          const decreaseBtn = document.getElementById("decreaseGuestBtn");
-          const increaseBtn = document.getElementById("increaseGuestBtn");
+      const inputEl = document.getElementById("guestCountInput");
+      const decreaseBtn = document.getElementById("decreaseGuestBtn");
+      const increaseBtn = document.getElementById("increaseGuestBtn");
 
-          decreaseBtn.onclick = () => {
-            let val = parseInt(inputEl.value) || 1;
-            if (val > 1) inputEl.value = val - 1;
-          };
-          increaseBtn.onclick = () => {
-            let val = parseInt(inputEl.value) || 1;
-            const max = window.maxGuestsFromQR || 10;
-            if (val < max) inputEl.value = val + 1;
-          };
+      decreaseBtn.onclick = () => {
+        let val = parseInt(inputEl.value) || 1;
+        if (val > 1) inputEl.value = val - 1;
+      };
+      increaseBtn.onclick = () => {
+        let val = parseInt(inputEl.value) || 1;
+        const max = window.maxGuestsFromQR || 10;
+        if (val < max) inputEl.value = val + 1;
+      };
 
-          // Prevent zoom on double-tap for these buttons
-          decreaseBtn.addEventListener("dblclick", (e) => e.preventDefault());
-          increaseBtn.addEventListener("dblclick", (e) => e.preventDefault());
-        })
-        .catch(err => {
-          if (loading) loading.style.display = "none";
-          console.error("🔴 verifyReservation error:", err);
-          showCustomAlert("予約番号の確認中にエラーが発生しました。");
-        });
+      // Prevent zoom on double-tap for these buttons
+      decreaseBtn.addEventListener("dblclick", (e) => e.preventDefault());
+      increaseBtn.addEventListener("dblclick", (e) => e.preventDefault());
     });
   }
 
@@ -320,10 +332,10 @@ document.addEventListener("DOMContentLoaded", () => {
       html5QrCode.start(
         { facingMode: "user" },
         {
-          fps: 10,
+          fps: 15,
           qrbox: function(viewfinderWidth, viewfinderHeight) {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const boxSize = Math.floor(minEdge * 0.7);
+            const boxSize = Math.floor(minEdge * 0.85);
             return { width: boxSize, height: boxSize };
           }
         },

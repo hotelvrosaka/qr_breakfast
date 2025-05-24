@@ -3,23 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+  <!-- iOS Web App Capabilities -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="QRチェック" />
+  <link rel="apple-touch-icon" href="image/qr_check.png" />
   <title>QRコードチェック</title>
   <link rel="stylesheet" href="css/check_qr.css" />
   <script src="js/html5-qrcode.min.js"></script>
   <script src="js/check_qr.js"></script>
 </head>
 <body>
-  <h1>QRコードスキャン</h1>
+  <h1 onclick="location.reload()" style="cursor: pointer;">QRコードスキャン</h1>
   <div class="container">
     <section>
-      <div id="preview" style="width: 100%; max-width: 400px; margin: 0 auto 20px;"></div>
-      <label for="qrResult">読み取り結果</label>
-      <input type="text" id="qrResult" placeholder="QRコードの内容がここに表示されます" />
-      <button id="searchButton">検索</button>
-      <div id="breakfast-check-table-wrapper" style="margin-top: 30px;">
+      <div id="preview" class="qr-preview"></div>
+      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 12px;">
+        <a href="index.html" class="inline-button" style="text-align: center; display: inline-block; line-height: 38px; text-decoration: none;">Home</a>
+        <button id="viewAllRecordsBtn" class="inline-button">全記録</button>
+        <button id="addManualEntryBtn" class="inline-button">追加</button>
+      </div>
+      <div id="breakfast-check-table-wrapper" style="margin-top: 0px;">
         <div id="breakfast-check-table"></div>
       </div>
     </section>
+  </div>
+
+  <!-- Custom Guest Count Popup Modal -->
+  <div id="customPromptOverlay" class="custom-prompt-overlay">
+    <div class="custom-prompt-box">
+      <p id="customPromptLabel">朝食を取る人数を入力してください。<br>Please enter the number of guests for breakfast.</p>
+      <div class="guest-count-wrapper">
+        <button id="decreaseGuestBtn" type="button">−</button>
+        <input type="text" id="guestCountInput" value="1" readonly />
+        <button id="increaseGuestBtn" type="button">＋</button>
+      </div>
+      <div class="custom-prompt-buttons">
+        <button id="customPromptCancel" type="button">キャンセル<br>Cancel</button>
+        <button id="customPromptConfirm" type="button">確定<br>Confirm</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>

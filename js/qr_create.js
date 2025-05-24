@@ -119,8 +119,10 @@ function kanaFullToHalf(str){
 }
 
 wanakanaScript.onload = () => {
-  // --- Fetch guest full list for suggestions and search on page load ---
-  fetchGuestFullList();
+  if (location.pathname.includes("qr_create.html")) {
+    // --- Fetch guest full list for suggestions and search on page load ---
+    fetchGuestFullList();
+  }
 
   const searchBtName = document.getElementById("searchBtName");
   if (searchBtName) {
@@ -349,12 +351,14 @@ window.handleRoomSearchResult = function(response) {
 document.addEventListener("DOMContentLoaded", () => {
   const SHEET_NAME_SEARCH_API = getSheetApiUrl();
 
-  // ✅ チェックイン日を本日の日付に設定
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  document.getElementById("checkIn").value = `${yyyy}-${mm}-${dd}`;
+  if (location.pathname.includes("qr_create.html")) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const checkInInput = document.getElementById("checkIn");
+    if (checkInInput) checkInInput.value = `${yyyy}-${mm}-${dd}`;
+  }
 
   const form = document.getElementById("qrForm");
 

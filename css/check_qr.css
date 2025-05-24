@@ -28,7 +28,7 @@ section {
 
 h1 {
   font-size: 2rem;
-  margin-bottom: 20px;
+  margin: 0px 0 12px;
 }
 
 label {
@@ -78,7 +78,6 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 30px;
-  margin-top: 30px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -206,4 +205,160 @@ button:hover {
   width: 80px;
   padding: 6px;
   font-size: 14px;
+}
+
+/* === QR Preview & Custom Prompt Modal Styles === */
+.qr-preview {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 20px;
+}
+
+.custom-prompt-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.custom-prompt-box {
+  background-color: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.custom-prompt-box p {
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.guest-count-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.guest-count-wrapper button {
+  font-size: 28px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: #2e86de;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.guest-count-wrapper input {
+  width: 80px;
+  height: 48px;
+  text-align: center;
+  font-size: 24px;
+  background-color: #f8f8f8;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 6px 12px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.custom-prompt-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.custom-prompt-buttons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+  background-color: #2e86de;
+  color: white;
+}
+
+.custom-prompt-buttons button:hover {
+  background-color: #1b4f9c;
+}
+.custom-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.custom-alert-box {
+  background-color: #fff;
+  padding: 24px 32px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  text-align: center;
+  max-width: 80%;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.custom-alert-box p {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.custom-alert-box button {
+  padding: 8px 20px;
+  background-color: #2e86de;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.custom-alert-box button:hover {
+  background-color: #1b4f9c;
+}
+.inline-button {
+  padding: 10px 16px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2e86de;
+  color: white;
+  cursor: pointer;
+}
+
+.inline-button:hover {
+  background-color: #1b4f9c;
+}
+.custom-alert-box.custom-alert-duplicate {
+  font-size: 16px;
+  padding: 28px 24px;
+  max-width: 98%;
+}
+
+.custom-alert-box.custom-alert-duplicate p {
+  font-size: 17px;
+  line-height: 1.9;
+}
+.duplicate-buttons button {
+  font-size: 15px;
+  padding: 10px 16px;
+  min-width: 110px;
 }

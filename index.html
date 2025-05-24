@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Hotel VR Osaka" />
-  <link rel="apple-touch-icon" href="image/qr_code_link.png" />
+  <link rel="apple-touch-icon" href="image/index.png" />
   <title>QR朝食管理メニュー</title>
   <style>
     body {
@@ -34,7 +34,8 @@
       border-radius: 6px;
       font-size: 16px;
     }
-    a:hover {
+    a:hover,
+    a#uploadBtn:hover {
       background-color: #1b4f9c;
     }
   </style>
@@ -43,9 +44,11 @@
   <h1>Hotel VR Osaka QR code</h1>
   <div class="menu">
     <a href="qr_create.html">QRコード生成</a>
+    <a href="check_qr.html">QR確認</a>
     <a href="waiting_list.html">待機リスト</a>
     <a href="data_analysis.html">データ分析</a>
   </div>
-  <img src="image/qr_code_link.png" alt="QRコード" style="margin-top: 20px; width: 120px; height: 120px;" />
+  <img src="image/hotel_qrcode_link.png" alt="QRコード" style="margin-top: 20px; width: 120px; height: 120px;" />
 </body>
+  <script src="js/qr_create.js"></script>
 </html>

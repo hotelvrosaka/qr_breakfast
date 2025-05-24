@@ -19,7 +19,9 @@
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
     <h1 style="font-size: 22px; margin: 0; cursor: pointer;" onclick="location.reload();">QRコード生成</h1>
     <div class="inline-buttons">
-      <button type="button" id="uploadBtn">アップロード</button>
+      <a href="index.html" style="text-decoration: none;">
+        <button style="padding: 6px 12px; font-size: 14px;">HOME</button>
+      </a>
     </div>
   </div>
 
@@ -81,23 +83,6 @@
 
   <input type="file" id="fileInput" style="display: none;">
   <script src="js/qr_create.js"></script>
-  <script>
-    const fileInput = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
-
-    uploadBtn.addEventListener("click", () => {
-      // Reset the input to allow re-selection of the same file
-      fileInput.value = "";
-      fileInput.click();
-    });
-
-    fileInput.addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      console.log("選択されたファイル:", file.name);
-      // 추후 파일 처리 로직을 여기에 추가
-    });
-  </script>
 
   <!-- ✅ 팝업용 QR 티켓 오버레이 -->
   <div id="qrOverlay" class="overlay" style="display: none;">

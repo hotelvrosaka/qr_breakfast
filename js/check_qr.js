@@ -223,12 +223,22 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     .then(devices => {
       if (devices && devices.length > 0) {
-        const backCamera = devices.find(device =>
-          device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')
-        ) || devices[devices.length - 1];
+        let selectedCamera;
+
+        // iOS 판별
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+          selectedCamera = { facingMode: "environment" };
+        } else {
+          const backCamera = devices.find(device =>
+            device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')
+          ) || devices[devices.length - 1];
+          selectedCamera = { deviceId: { exact: backCamera.id } };
+        }
 
         html5QrCode.start(
-          { deviceId: { exact: backCamera.id } },
+          selectedCamera,
           { fps: 10, qrbox: { width: 250, height: 250 } },
           onScanSuccess
         ).catch(err => {

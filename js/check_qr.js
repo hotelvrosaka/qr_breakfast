@@ -225,11 +225,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (devices && devices.length > 0) {
         let selectedCamera;
 
-        // iOS 판별
+        // iOS 判別
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
         if (isIOS) {
-          selectedCamera = { facingMode: "environment" };
+          const backCamera = devices.find(device =>
+            device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')
+          ) || devices[devices.length - 1];
+          selectedCamera = { deviceId: { exact: backCamera.id } };
         } else {
           const backCamera = devices.find(device =>
             device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')

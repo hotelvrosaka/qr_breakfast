@@ -285,7 +285,7 @@ function handleFetchStats(e, callback) {
     Logger.log("🗒 total_nm 데이터 수: " + totalData.length);
     let totalRoomFromSheet = 0;
     for (let i = 1; i < totalData.length; i++) {
-      const d = String(totalData[i][0]).trim();  // 날짜 텍스트
+      const d = Utilities.formatDate(new Date(totalData[i][0]), Session.getScriptTimeZone(), "yyyy-MM-dd");
       const rowCount = Number(totalData[i][1]) || 0;
       if (d >= startDate && d <= endDate) {
         totalRoomFromSheet += rowCount;
@@ -295,7 +295,7 @@ function handleFetchStats(e, callback) {
     // --- Calculate totalGuests from total_nm sheet ---
     let totalGuests = 0;
     for (let i = 1; i < totalData.length; i++) {
-      const d = String(totalData[i][0]).trim();  // 날짜 텍스트
+      const d = Utilities.formatDate(new Date(totalData[i][0]), Session.getScriptTimeZone(), "yyyy-MM-dd");
       const guestCount = Number(totalData[i][1]) || 0;
       if (d >= startDate && d <= endDate) {
         Logger.log(`✅ 포함된 날짜: ${d}, 인원수: ${guestCount}`);

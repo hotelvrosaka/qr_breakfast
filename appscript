@@ -216,7 +216,7 @@ function handleFetchStats(e, callback) {
     for (let i = 1; i < data.length; i++) {
       const [timestamp, room, guests] = data[i];
       if (!timestamp || !room || guests === "" || guests == null) continue;
-      const date = timestamp.split(" ")[0];
+      const date = Utilities.formatDate(new Date(timestamp), Session.getScriptTimeZone(), "yyyy-MM-dd");
       if (date >= startDate && date <= endDate) {
         results.push({ timestamp, date, room, guests: Number(guests) });
       }

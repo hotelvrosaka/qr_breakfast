@@ -186,6 +186,8 @@ function handleFetchStats(e, callback) {
   try {
     const startDate = e.parameter.startDate;
     const endDate = e.parameter.endDate;
+    Logger.log("🔍 startDate: " + startDate);
+    Logger.log("🔍 endDate: " + endDate);
 
     // 🔄 Clean old data in breakfast_list
     const now = new Date();
@@ -280,6 +282,7 @@ function handleFetchStats(e, callback) {
     // --- Calculate totalRoom from total_nm sheet for date range (compare text dates directly) ---
     const totalSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("total_nm");
     const totalData = totalSheet.getDataRange().getValues();
+    Logger.log("🗒 total_nm 데이터 수: " + totalData.length);
     let totalRoomFromSheet = 0;
     for (let i = 1; i < totalData.length; i++) {
       const d = String(totalData[i][0]).trim();  // 날짜 텍스트
@@ -289,12 +292,24 @@ function handleFetchStats(e, callback) {
       }
     }
 
+    // --- Calculate totalGuests from total_nm sheet ---
+    let totalGuests = 0;
+    for (let i = 1; i < totalData.length; i++) {
+      const d = String(totalData[i][0]).trim();  // 날짜 텍스트
+      const guestCount = Number(totalData[i][1]) || 0;
+      if (d >= startDate && d <= endDate) {
+        Logger.log(`✅ 포함된 날짜: ${d}, 인원수: ${guestCount}`);
+        totalGuests += guestCount;
+      }
+    }
+
     return jsonpResponse(callback, {
       success: true,
       rows: results,
       roomOnly: roomOnlyMap,
       totalRoom: totalRoomFromSheet,
-      roomOnlyCount: roomOnlySum
+      roomOnlyCount: roomOnlySum,
+      totalGuests
     });
   } catch (err) {
     return jsonpResponse(callback, { success: false, error: err.message });
@@ -471,4 +486,17 @@ function doPost(e) {
       }
     })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function testFetchStats() {
+  const e = {
+    parameter: {
+      mode: "fetchStats",
+      callback: "handleStatsResponse",
+      startDate: "2025-05-30",
+      endDate: "2025-05-30"
+    }
+  };
+  const result = handleFetchStats(e, e.parameter.callback);
+  Logger.log("📦 결과 JSONP:", result.getContent());
 }

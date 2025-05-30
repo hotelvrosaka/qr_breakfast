@@ -84,7 +84,7 @@ function handleStatsResponse(response) {
   document.getElementById("room-only-count").textContent = `${roomOnlyCount} (${roomOnlyRate}％)`;
 
   // 총 이용객 수 계산
-  const guestSum = response.rows.reduce((sum, row) => sum + row.guests, 0);
+  const breakfastGuests = response.breakfastGuests || 0;
 
   // 날짜 차이 계산 (종료일 - 시작일 + 1일 포함)
   const start = new Date(document.getElementById("stats-start-date").value);
@@ -92,7 +92,7 @@ function handleStatsResponse(response) {
   const dateDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
   // 일평균 계산
-  const guestAvg = Math.round(guestSum / dateDiff);
+  const guestAvg = Math.round(breakfastGuests / dateDiff);
 
   // room only 총합 및 평균 계산
   let roomOnlySum = 0;
@@ -106,11 +106,11 @@ function handleStatsResponse(response) {
 
   document.getElementById("sum-room-only").textContent = roomOnlySum;
   document.getElementById("avg-room-only").textContent = roomOnlyAvg;
-  document.getElementById("sum-guest").textContent = guestSum;
+  document.getElementById("sum-guest").textContent = breakfastGuests;
   document.getElementById("avg-guest").textContent = guestAvg;
 
   // 디버그 로그 출력
-  console.log("총 이용객 수:", guestSum);
+  console.log("총 이용객 수:", breakfastGuests);
   console.log("총 일수:", dateDiff);
   console.log("일평균 이용객 수:", guestAvg);
 

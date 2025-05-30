@@ -250,24 +250,42 @@ function handleFetchStats(e, callback) {
       }
     }
 
-    // Calculate totalRoom from guest_list
+    // Calculate totalRoom from guest_list: count rooms per day and sum across date range
     const guestSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
     const guestData = guestSheet.getDataRange().getValues();
-    const roomSet = new Set();
+    // Count total number of rooms per date, sum across date range
+    const roomMapByDate = {};
     for (let i = 1; i < guestData.length; i++) {
       const room = guestData[i][1];
-      if (room) roomSet.add(String(room).trim());
+      const checkIn = guestData[i][3];
+      const checkOut = guestData[i][4];
+      if (!room || !checkIn || !checkOut) continue;
+
+      let date = new Date(checkIn);
+      const end = new Date(checkOut);
+      while (date <= end) {
+        const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        if (dateStr >= startDate && dateStr <= endDate) {
+          if (!roomMapByDate[dateStr]) roomMapByDate[dateStr] = new Set();
+          roomMapByDate[dateStr].add(String(room).trim());
+        }
+        date.setDate(date.getDate() + 1);
+      }
+    }
+    let totalRoom = 0;
+    for (const rooms of Object.values(roomMapByDate)) {
+      totalRoom += rooms.size;
     }
 
-    // --- Read from total_nm sheet for guestTotalSum ---
+    // --- Calculate totalRoom from total_nm sheet for date range ---
     const totalSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("total_nm");
     const totalData = totalSheet.getDataRange().getValues();
-    let guestTotalSum = 0;
+    let totalRoomFromSheet = 0;
     for (let i = 1; i < totalData.length; i++) {
-      const [d, , rowCount] = totalData[i];
+      const [d, rowCount] = totalData[i];
       const dateStr = Utilities.formatDate(new Date(d), Session.getScriptTimeZone(), "yyyy-MM-dd");
       if (dateStr >= startDate && dateStr <= endDate) {
-        guestTotalSum += Number(rowCount) || 0;
+        totalRoomFromSheet += Number(rowCount) || 0;
       }
     }
 
@@ -275,9 +293,8 @@ function handleFetchStats(e, callback) {
       success: true,
       rows: results,
       roomOnly: roomOnlyMap,
-      totalRoom: roomSet.size,
-      roomOnlyCount: roomOnlySum,
-      guestTotal: guestTotalSum
+      totalRoom: totalRoomFromSheet,
+      roomOnlyCount: roomOnlySum
     });
   } catch (err) {
     return jsonpResponse(callback, { success: false, error: err.message });

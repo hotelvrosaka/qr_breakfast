@@ -292,19 +292,19 @@ function handleFetchStats(e, callback) {
       }
     }
 
-    // --- Calculate totalGuests from total_nm sheet ---
-    let totalGuests = 0;
-    for (let i = 1; i < totalData.length; i++) {
-      const d = Utilities.formatDate(new Date(totalData[i][0]), Session.getScriptTimeZone(), "yyyy-MM-dd");
-      const guestCount = Number(totalData[i][1]) || 0;
-      if (d >= startDate && d <= endDate) {
-        Logger.log(`✅ 포함된 날짜: ${d}, 인원수: ${guestCount}`);
-        totalGuests += guestCount;
+    // --- Calculate breakfastGuests from breakfast_list sheet ---
+    let breakfastGuests = 0;
+    for (let i = 1; i < data.length; i++) {
+      const [timestamp, room, guests] = data[i];
+      if (!timestamp || !room || guests === "" || guests == null) continue;
+      const date = Utilities.formatDate(new Date(timestamp), Session.getScriptTimeZone(), "yyyy-MM-dd");
+      if (date >= startDate && date <= endDate) {
+        breakfastGuests += Number(guests) || 0;
       }
     }
 
     Logger.log("🧪 최종 반환 데이터: " + JSON.stringify({
-      totalGuests,
+      breakfastGuests,
       totalRoom: totalRoomFromSheet,
       roomOnlyCount: roomOnlySum,
       rowsCount: results.length
@@ -315,7 +315,7 @@ function handleFetchStats(e, callback) {
       roomOnly: roomOnlyMap,
       totalRoom: totalRoomFromSheet,
       roomOnlyCount: roomOnlySum,
-      totalGuests
+      breakfastGuests
     });
   } catch (err) {
     return jsonpResponse(callback, { success: false, error: err.message });

@@ -303,6 +303,12 @@ function handleFetchStats(e, callback) {
       }
     }
 
+    Logger.log("🧪 최종 반환 데이터: " + JSON.stringify({
+      totalGuests,
+      totalRoom: totalRoomFromSheet,
+      roomOnlyCount: roomOnlySum,
+      rowsCount: results.length
+    }, null, 2));
     return jsonpResponse(callback, {
       success: true,
       rows: results,
@@ -498,5 +504,5 @@ function testFetchStats() {
     }
   };
   const result = handleFetchStats(e, e.parameter.callback);
-  Logger.log("📦 결과 JSONP:", result.getContent());
+  Logger.log("📦 결과 JSONP: " + result.getContent());
 }

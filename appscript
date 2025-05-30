@@ -196,7 +196,7 @@ function handleFetchStats(e, callback) {
     const breakfastRowsToKeep = [breakfastHeader];
     for (let i = 1; i < breakfastData.length; i++) {
       const [timestamp, room, guests] = breakfastData[i];
-      if (!timestamp || !room || !guests) continue;
+      if (!timestamp || !room || guests === "" || guests == null) continue;
       const ts = new Date(timestamp);
       const hour = ts.getHours() + ts.getMinutes() / 60;
       if (ts >= threeMonthsAgo && hour >= 6 && hour <= 11) {
@@ -213,7 +213,7 @@ function handleFetchStats(e, callback) {
     const results = [];
     for (let i = 1; i < data.length; i++) {
       const [timestamp, room, guests] = data[i];
-      if (!timestamp || !room || !guests) continue;
+      if (!timestamp || !room || guests === "" || guests == null) continue;
       const date = timestamp.split(" ")[0];
       if (date >= startDate && date <= endDate) {
         results.push({ timestamp, date, room, guests: Number(guests) });

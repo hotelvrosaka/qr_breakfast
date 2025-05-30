@@ -1,6 +1,6 @@
 function getScriptUrl() {
   // 아래 URL을 배포된 Apps Script 웹 앱 주소로 교체하세요
-  return "https://script.google.com/macros/s/AKfycbz7h6u9xmrna9cg6FW2e9apphHbsiqtRHWIwrxyoSg58_7gIBSwtmAq8hpKGj9rY73WDA/exec";
+  return "https://script.google.com/macros/s/AKfycbwOkh3hH3f28I-A3yTHARQ32Bouc3OuQzCnxK2HhDUKzZ1bXLXUO77dEkUEhuhIRnC_mQ/exec";
 }
 
 // NOTE: 아래 YOUR_DEPLOYED_SCRIPT_ID를 실제 Google Apps Script의 배포 ID로 교체하세요!

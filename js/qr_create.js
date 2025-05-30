@@ -490,6 +490,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchBtName) searchBtName.click(); // 이름 검색 버튼 클릭
       }
     });
+
+    // ✅ 이름 입력창 클릭 시 자동 초기화
+    nameInput.addEventListener("focus", () => {
+      nameInput.value = "";
+    });
   }
 
   const roomInput = document.getElementById("room");
@@ -501,6 +506,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const searchBtRoom = document.getElementById("searchBtRoom");
         if (searchBtRoom) searchBtRoom.click();
       }
+    });
+
+    // ✅ 방 번호 입력창 클릭 시 자동 초기화
+    roomInput.addEventListener("focus", () => {
+      roomInput.value = "";
     });
   }
 

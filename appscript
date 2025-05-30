@@ -277,15 +277,15 @@ function handleFetchStats(e, callback) {
       totalRoom += rooms.size;
     }
 
-    // --- Calculate totalRoom from total_nm sheet for date range ---
+    // --- Calculate totalRoom from total_nm sheet for date range (compare text dates directly) ---
     const totalSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("total_nm");
     const totalData = totalSheet.getDataRange().getValues();
     let totalRoomFromSheet = 0;
     for (let i = 1; i < totalData.length; i++) {
-      const [d, rowCount] = totalData[i];
-      const dateStr = Utilities.formatDate(new Date(d), Session.getScriptTimeZone(), "yyyy-MM-dd");
-      if (dateStr >= startDate && dateStr <= endDate) {
-        totalRoomFromSheet += Number(rowCount) || 0;
+      const d = String(totalData[i][0]).trim();  // 날짜 텍스트
+      const rowCount = Number(totalData[i][1]) || 0;
+      if (d >= startDate && d <= endDate) {
+        totalRoomFromSheet += rowCount;
       }
     }
 

@@ -132,20 +132,6 @@ wanakanaScript.onload = () => {
         return;
       }
 
-      // 자동 갱신 검사: 페이지 진입 후, 지정 시간대에 도달했는데 갱신 안 했을 경우
-      const now = new Date();
-      const hour = now.getHours();
-      const minute = now.getMinutes();
-      const isRefreshHour =
-        (hour === 14 && minute >= 30) || // 14:30~
-        (hour >= 15 && hour <= 23);      // 15:00~23:00
-
-      const shouldRefresh = isRefreshHour && (!lastGuestListFetchedAt || lastGuestListFetchedAt.getHours() !== hour);
-
-      if (shouldRefresh) {
-        console.log("⏱️ 검색 전 게스트 전체 목록 갱신 실행");
-        fetchGuestFullList();
-      }
 
       // --- Show search overlay before searching ---
       showSearchOverlay();

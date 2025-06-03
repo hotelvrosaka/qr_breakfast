@@ -456,8 +456,16 @@ function doPost(e) {
       const dateStr = Utilities.formatDate(today, Session.getScriptTimeZone(), "yyyy-MM-dd");
 
       const guestSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
-      const guestData = guestSheet.getDataRange().getValues();
-      const totalRows = guestData.length - 1;
+      const lastRowGuest = guestSheet.getLastRow();
+      let sumF = 0;
+      if (lastRowGuest >= 2) {
+        const valuesF = guestSheet.getRange(2, 6, lastRowGuest - 1, 1).getValues();
+        valuesF.forEach(row => {
+          const num = Number(row[0]);
+          if (!isNaN(num)) sumF += num;
+        });
+      }
+      const totalRows = sumF;
 
       const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
       const totalData = totalSheet.getDataRange().getValues();

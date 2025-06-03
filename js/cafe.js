@@ -448,6 +448,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (form) form.reset();
           document.getElementById("breakfastHidden").value = "";
           document.querySelectorAll(".toggle-option").forEach(o => o.classList.remove("active"));
+          // Show custom registration confirmation popup
+          createOverlayWithText("登録されました");
+          setTimeout(removeSearchOverlay, 2000);
         };
         return;
       }
@@ -479,6 +482,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (form) form.reset();
       document.getElementById("breakfastHidden").value = "";
       document.querySelectorAll(".toggle-option").forEach(o => o.classList.remove("active"));
+      // Show custom registration confirmation popup
+      createOverlayWithText("登録されました");
+      setTimeout(removeSearchOverlay, 2000);
     });
   }
 

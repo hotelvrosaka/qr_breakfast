@@ -222,33 +222,19 @@ function handleFetchStats(e, callback) {
       }
     }
 
-    // 🔄 Clean old data in room_only
+    // --- Calculate room-only guest stats by summing column 3 for matching dates ---
+    let roomOnlyGuests = 0;
     const roomOnlySheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("room_only");
-    const roomOnlyData = roomOnlySheet.getDataRange().getValues();
-    const roomOnlyHeader = roomOnlyData[0];
-    const roomOnlyRowsToKeep = [roomOnlyHeader];
-    for (let i = 1; i < roomOnlyData.length; i++) {
-      const [rDate, rRoom] = roomOnlyData[i];
-      if (!rDate || !rRoom) continue;
-      const d = new Date(rDate);
-      if (d >= threeMonthsAgo) {
-        roomOnlyRowsToKeep.push(roomOnlyData[i]);
-      }
-    }
-    roomOnlySheet.clearContents();
-    roomOnlySheet.getRange(1, 1, roomOnlyRowsToKeep.length, roomOnlyHeader.length).setValues(roomOnlyRowsToKeep);
-
-    // Now get the cleaned room_only data for stats
-    const roomOnlyDataClean = roomOnlySheet.getDataRange().getValues();
-    const roomOnlyMap = {};
-    let roomOnlySum = 0;
-    for (let i = 1; i < roomOnlyDataClean.length; i++) {
-      const [rDate, rRoom] = roomOnlyDataClean[i];
-      if (!rDate || !rRoom) continue;
-      if (rDate >= startDate && rDate <= endDate) {
-        if (!roomOnlyMap[rDate]) roomOnlyMap[rDate] = [];
-        roomOnlyMap[rDate].push(String(rRoom));
-        roomOnlySum++;
+    const roomOnlyDataAll = roomOnlySheet.getDataRange().getValues();
+    for (let i = 1; i < roomOnlyDataAll.length; i++) {
+      const [rDate, , guestCountRaw] = roomOnlyDataAll[i];
+      if (!rDate || guestCountRaw === "" || guestCountRaw == null) continue;
+      const dateStr = Utilities.formatDate(new Date(rDate), Session.getScriptTimeZone(), "yyyy-MM-dd");
+      if (dateStr === startDate || (dateStr >= startDate && dateStr <= endDate)) {
+        const count = Number(guestCountRaw);
+        if (!isNaN(count)) {
+          roomOnlyGuests += count;
+        }
       }
     }
 
@@ -292,29 +278,33 @@ function handleFetchStats(e, callback) {
       }
     }
 
-    // --- Calculate breakfastGuests from breakfast_list sheet ---
+    // --- Calculate breakfastGuests by summing column 3 for matching dates ---
     let breakfastGuests = 0;
-    for (let i = 1; i < data.length; i++) {
-      const [timestamp, room, guests] = data[i];
-      if (!timestamp || !room || guests === "" || guests == null) continue;
+    const breakfastSheetClean = SpreadsheetApp.openById(SHEET_ID).getSheetByName("breakfast_list");
+    const breakfastDataAll = breakfastSheetClean.getDataRange().getValues();
+    for (let i = 1; i < breakfastDataAll.length; i++) {
+      const [timestamp, room, guestCountRaw] = breakfastDataAll[i];
+      if (!timestamp || !room || guestCountRaw === "" || guestCountRaw == null) continue;
       const date = Utilities.formatDate(new Date(timestamp), Session.getScriptTimeZone(), "yyyy-MM-dd");
-      if (date >= startDate && date <= endDate) {
-        breakfastGuests += Number(guests) || 0;
+      if (date === startDate || (date >= startDate && date <= endDate)) {
+        const count = Number(guestCountRaw);
+        if (!isNaN(count)) {
+          breakfastGuests += count;
+        }
       }
     }
 
     Logger.log("🧪 최종 반환 데이터: " + JSON.stringify({
       breakfastGuests,
       totalRoom: totalRoomFromSheet,
-      roomOnlyCount: roomOnlySum,
+      roomOnlyGuests: roomOnlyGuests,
       rowsCount: results.length
     }, null, 2));
     return jsonpResponse(callback, {
       success: true,
       rows: results,
-      roomOnly: roomOnlyMap,
+      roomOnlyGuests: roomOnlyGuests,
       totalRoom: totalRoomFromSheet,
-      roomOnlyCount: roomOnlySum,
       breakfastGuests
     });
   } catch (err) {
@@ -428,24 +418,31 @@ function doPost(e) {
     // --- room_only 처리 ---
     if (roomOnlyData) {
       const roomSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("room_only");
-      const today = new Date();
-      today.setDate(today.getDate() + 1);
-      const date = Utilities.formatDate(today, Session.getScriptTimeZone(), "yyyy-MM-dd");
-      const newRoomRows = roomOnlyData.trim().split(',').map(room => [date, room]);
-
-      const existingData = roomSheet.getDataRange().getValues();
-      const header = existingData[0];
-      const bodyRows = existingData.slice(1);
-
-      const existingSet = new Set(bodyRows.map(row => `${row[0]}_${row[1]}`));
-      const uniqueNewRows = newRoomRows.filter(([d, r]) => !existingSet.has(`${d}_${r}`));
-
-      const finalData = [header, ...bodyRows, ...uniqueNewRows];
+      // Clear existing contents
       roomSheet.clearContents();
-      roomSheet.getRange(1, 1, finalData.length, finalData[0].length).setValues(finalData);
-      // Set the first column (date) to plain text format
-      roomSheet.getRange(2, 1, finalData.length - 1, 1).setNumberFormat('@');
-      result.roomOnlyUpload = { success: true, inserted: uniqueNewRows.length };
+      // Write date in row 1, column 1
+      const todayForRoom = new Date();
+      todayForRoom.setDate(todayForRoom.getDate() + 1);
+      const dateForRoom = Utilities.formatDate(todayForRoom, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      roomSheet.getRange(1, 1).setValue(dateForRoom);
+      // Write room numbers in row 2, column 1 as comma-separated string
+      const roomOnlyStr = roomOnlyData.trim();
+      roomSheet.getRange(2, 1).setValue(roomOnlyStr);
+      // Compute total guest count for room-only reservations
+      let totalGuests = 0;
+      if (rows) {
+        const roomList = roomOnlyStr.split(",").map(r => r.trim());
+        rows.forEach(function(r) {
+          const roomNum = r[1]; // 방 번호 컬럼
+          const guestsCount = Number(r[5]); // 고객수 컬럼 (대+소 합산으로 이미 처리됨)
+          if (roomList.indexOf(roomNum) !== -1 && !isNaN(guestsCount)) {
+            totalGuests += guestsCount;
+          }
+        });
+      }
+      // Write total guest count in row 3, column 1
+      roomSheet.getRange(3, 1).setValue(totalGuests);
+      result.roomOnlyUpload = { success: true, inserted: roomOnlyStr.split(",").length };
     }
 
     // --- total_nm 처리 (총 방 수 기록) ---

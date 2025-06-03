@@ -500,7 +500,7 @@ function testFetchStats() {
       mode: "fetchStats",
       callback: "handleStatsResponse",
       startDate: "2025-05-30",
-      endDate: "2025-05-30"
+      endDate: "2025-05-31"
     }
   };
   const result = handleFetchStats(e, e.parameter.callback);

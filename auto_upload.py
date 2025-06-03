@@ -111,7 +111,17 @@ def process_and_upload():
         name = str(row.get("予約者", "")).strip()
         check_in = format_date(row.get("C/I", ""))
         check_out = format_date(row.get("C/O", ""))
-        guests = str(row.get("大人人数", "")).strip()
+        adult_raw = row.get("大人人数", 0)
+        child_raw = row.get("子供人数", 0)
+        try:
+            adult = int(adult_raw)
+        except:
+            adult = 0
+        try:
+            child = int(child_raw)
+        except:
+            child = 0
+        guests = str(adult + child)
         plan = str(row.get("プラン名", "")).lower()
 
         breakfast_flag = "0" if "room only" in plan else "1"

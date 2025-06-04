@@ -415,16 +415,29 @@ function doPost(e) {
       result.guestUpload = { success: true, inserted: guestRows.length };
     }
 
-    // --- room_only 처리 ---
+    // --- room_only 처리 (배치 쓰기) ---
     if (roomOnlyData) {
       const roomSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("room_only");
-      // Do not clear existing data; just append new rows
       const todayForRoom = new Date();
       todayForRoom.setDate(todayForRoom.getDate() + 1);
       const dateStr = Utilities.formatDate(todayForRoom, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      // Define threeMonthsAgo for room_only cleanup
+      const threeMonthsAgo = new Date(todayForRoom.getFullYear(), todayForRoom.getMonth() - 3, todayForRoom.getDate());
+
+      // Delete any existing rows in "room_only" sheet that match dateStr or are older than threeMonthsAgo (loop from bottom to top)
+      const existingData = roomSheet.getDataRange().getValues();
+      for (let i = existingData.length - 1; i >= 1; i--) { // skip header, index 0
+        const cellDate = new Date(existingData[i][0]);
+        if (!isNaN(cellDate)) {
+          if (cellDate < threeMonthsAgo || Utilities.formatDate(cellDate, Session.getScriptTimeZone(), "yyyy-MM-dd") === dateStr) {
+            roomSheet.deleteRow(i + 1); // sheet rows are 1-based
+          }
+        }
+      }
+
       const roomList = roomOnlyData.trim().split(",").map(r => r.trim());
-      roomList.forEach(function(roomNum) {
-        // Compute guest count for this room
+      // Prepare data rows for batch insertion
+      const eachRowData = roomList.map(function(roomNum) {
         let guestCountForRoom = 0;
         if (rows) {
           rows.forEach(function(r) {
@@ -436,8 +449,13 @@ function doPost(e) {
             }
           });
         }
-        roomSheet.appendRow([dateStr, roomNum, guestCountForRoom]);
+        return [dateStr, roomNum, guestCountForRoom];
       });
+      const startRow = roomSheet.getLastRow() + 1;
+      if (eachRowData.length > 0) {
+        roomSheet.getRange(startRow, 1, eachRowData.length, eachRowData[0].length)
+          .setValues(eachRowData);
+      }
       result.roomOnlyUpload = { success: true, inserted: roomList.length };
     }
 
@@ -459,11 +477,13 @@ function doPost(e) {
         });
       }
       const totalRows = sumF;
+      const guestCountRows = Math.max(guestSheet.getLastRow() - 1, 0); // exclude header, minimum 0
 
       const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
       const totalData = totalSheet.getDataRange().getValues();
-      const header = ["日付", "行数"];
-      const filtered = [header];
+      // const header = ["日付", "行数"];
+      // const filtered = [header];
+      const filtered = [];
 
       for (let i = 1; i < totalData.length; i++) {
         const d = new Date(totalData[i][0]);
@@ -473,8 +493,12 @@ function doPost(e) {
         }
       }
 
-      const newRow = [dateStr, totalRows];
-      const updated = [...filtered, newRow];
+      // Insert two rows for today: first guestCountRows, then totalRows
+      const newRows = [
+        [dateStr, guestCountRows],
+        [dateStr, totalRows]
+      ];
+      const updated = filtered.concat(newRows);
       totalSheet.clearContents();
       totalSheet.getRange(1, 1, updated.length, updated[0].length).setValues(updated);
     } catch (err) {

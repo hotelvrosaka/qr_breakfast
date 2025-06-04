@@ -418,31 +418,27 @@ function doPost(e) {
     // --- room_only 처리 ---
     if (roomOnlyData) {
       const roomSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("room_only");
-      // Clear existing contents
-      roomSheet.clearContents();
-      // Write date in row 1, column 1
+      // Do not clear existing data; just append new rows
       const todayForRoom = new Date();
       todayForRoom.setDate(todayForRoom.getDate() + 1);
-      const dateForRoom = Utilities.formatDate(todayForRoom, Session.getScriptTimeZone(), "yyyy-MM-dd");
-      roomSheet.getRange(1, 1).setValue(dateForRoom);
-      // Write room numbers in row 2, column 1 as comma-separated string
-      const roomOnlyStr = roomOnlyData.trim();
-      roomSheet.getRange(2, 1).setValue(roomOnlyStr);
-      // Compute total guest count for room-only reservations
-      let totalGuests = 0;
-      if (rows) {
-        const roomList = roomOnlyStr.split(",").map(r => r.trim());
-        rows.forEach(function(r) {
-          const roomNum = r[1]; // 방 번호 컬럼
-          const guestsCount = Number(r[5]); // 고객수 컬럼 (대+소 합산으로 이미 처리됨)
-          if (roomList.indexOf(roomNum) !== -1 && !isNaN(guestsCount)) {
-            totalGuests += guestsCount;
-          }
-        });
-      }
-      // Write total guest count in row 3, column 1
-      roomSheet.getRange(3, 1).setValue(totalGuests);
-      result.roomOnlyUpload = { success: true, inserted: roomOnlyStr.split(",").length };
+      const dateStr = Utilities.formatDate(todayForRoom, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      const roomList = roomOnlyData.trim().split(",").map(r => r.trim());
+      roomList.forEach(function(roomNum) {
+        // Compute guest count for this room
+        let guestCountForRoom = 0;
+        if (rows) {
+          rows.forEach(function(r) {
+            if (String(r[1]) === roomNum) {
+              const cnt = Number(r[5]);
+              if (!isNaN(cnt)) {
+                guestCountForRoom += cnt;
+              }
+            }
+          });
+        }
+        roomSheet.appendRow([dateStr, roomNum, guestCountForRoom]);
+      });
+      result.roomOnlyUpload = { success: true, inserted: roomList.length };
     }
 
     // --- total_nm 처리 (총 방 수 기록) ---

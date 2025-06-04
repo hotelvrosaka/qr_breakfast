@@ -451,7 +451,9 @@ function doPost(e) {
         }
         return [dateStr, roomNum, guestCountForRoom];
       });
-      const startRow = roomSheet.getLastRow() + 1;
+      // Ensure data always begin from row 2, preserving the header in row 1
+      const lastRowNum = roomSheet.getLastRow();
+      const startRow = lastRowNum >= 1 ? lastRowNum + 1 : 2;
       if (eachRowData.length > 0) {
         roomSheet.getRange(startRow, 1, eachRowData.length, eachRowData[0].length)
           .setValues(eachRowData);
@@ -468,23 +470,19 @@ function doPost(e) {
 
       const guestSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
       const lastRowGuest = guestSheet.getLastRow();
-      let sumF = 0;
+      let totalGuests = 0;
       if (lastRowGuest >= 2) {
         const valuesF = guestSheet.getRange(2, 6, lastRowGuest - 1, 1).getValues();
         valuesF.forEach(row => {
           const num = Number(row[0]);
-          if (!isNaN(num)) sumF += num;
+          if (!isNaN(num)) totalGuests += num;
         });
       }
-      const totalRows = sumF;
-      const guestCountRows = Math.max(guestSheet.getLastRow() - 1, 0); // exclude header, minimum 0
+      const totalRooms = Math.max(guestSheet.getLastRow() - 1, 0); // exclude header, minimum 0
 
       const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
       const totalData = totalSheet.getDataRange().getValues();
-      // const header = ["日付", "行数"];
-      // const filtered = [header];
       const filtered = [];
-
       for (let i = 1; i < totalData.length; i++) {
         const d = new Date(totalData[i][0]);
         const dStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
@@ -492,13 +490,9 @@ function doPost(e) {
           filtered.push(totalData[i]);
         }
       }
-
-      // Insert two rows for today: first guestCountRows, then totalRows
-      const newRows = [
-        [dateStr, guestCountRows],
-        [dateStr, totalRows]
-      ];
-      const updated = filtered.concat(newRows);
+      // Insert one row for today: [dateStr, totalRooms, totalGuests]
+      const newRow = [dateStr, totalRooms, totalGuests];
+      const updated = filtered.concat([newRow]);
       totalSheet.clearContents();
       totalSheet.getRange(1, 1, updated.length, updated[0].length).setValues(updated);
     } catch (err) {

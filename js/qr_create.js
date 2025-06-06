@@ -677,3 +677,42 @@ function closeSelectPopup() {
       document.getElementById("breakfastHidden").value = option.dataset.value;
     });
   });
+
+  // ✅ Room Only リストボタンの処理 (alertでメモ風ポップアップ)
+  const roomOnlyBtn = document.getElementById("roomOnlyListBtn");
+  if (roomOnlyBtn) {
+    roomOnlyBtn.addEventListener("click", () => {
+      if (!cachedGuestList || cachedGuestList.length === 0) {
+        alert("ゲストデータが読み込まれていません。");
+        return;
+      }
+
+      const roomOnlyGuests = cachedGuestList
+        .filter(g => g.breakfastFlag === 0 || g.breakfastFlag === "0")
+        .sort((a, b) => parseInt(a.room) - parseInt(b.room));
+
+      if (roomOnlyGuests.length === 0) {
+        alert("Room Onlyのゲストは見つかりませんでした。");
+        return;
+      }
+
+      const grouped = {};
+      roomOnlyGuests.forEach(g => {
+        const room = String(g.room).padStart(3, "0");
+        const hundred = Math.floor(parseInt(room) / 100);
+        if (!grouped[hundred]) grouped[hundred] = [];
+        grouped[hundred].push(room);
+      });
+
+      let list = "";
+      Object.keys(grouped).sort((a, b) => a - b).forEach(hundred => {
+        const rooms = grouped[hundred];
+        for (let i = 0; i < rooms.length; i += 5) {
+          list += rooms.slice(i, i + 5).join(" ") + "\n";
+        }
+        list += "\n"; // blank line between hundred-groups
+      });
+
+      alert(`🛏️ Room Onlyリスト（計：${roomOnlyGuests.length}）\n\n${list}`);
+    });
+  }

@@ -465,7 +465,7 @@ function doPost(e) {
     try {
       const totalSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("total_nm");
       const today = new Date();
-      today.setDate(today.getDate() + 1); // 하루 더함
+      today.setDate(today.getDate() + 1);
       const dateStr = Utilities.formatDate(today, Session.getScriptTimeZone(), "yyyy-MM-dd");
 
       const guestSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("guest_list");
@@ -478,23 +478,32 @@ function doPost(e) {
           if (!isNaN(num)) totalGuests += num;
         });
       }
-      const totalRooms = Math.max(guestSheet.getLastRow() - 1, 0); // exclude header, minimum 0
+      const totalRooms = Math.max(guestSheet.getLastRow() - 1, 0);
 
       const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
       const totalData = totalSheet.getDataRange().getValues();
-      const filtered = [];
+      const updatedMap = new Map();
+
       for (let i = 1; i < totalData.length; i++) {
         const d = new Date(totalData[i][0]);
         const dStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
-        if (!isNaN(d) && d >= threeMonthsAgo && dStr !== dateStr) {
-          filtered.push(totalData[i]);
+        if (!isNaN(d) && d >= threeMonthsAgo) {
+          updatedMap.set(dStr, [dStr, totalData[i][1], totalData[i][2]]);
         }
       }
-      // Insert one row for today: [dateStr, totalRooms, totalGuests]
-      const newRow = [dateStr, totalRooms, totalGuests];
-      const updated = filtered.concat([newRow]);
-      totalSheet.clearContents();
-      totalSheet.getRange(1, 1, updated.length, updated[0].length).setValues(updated);
+
+      // Update or insert the new date
+      updatedMap.set(dateStr, [dateStr, totalRooms, totalGuests]);
+
+      // Sort dates
+      const sortedEntries = Array.from(updatedMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      const updated = sortedEntries.map(entry => entry[1]);
+
+      // Only clear contents below the header and write starting from row 2
+      if (totalSheet.getLastRow() > 1) {
+        totalSheet.getRange(2, 1, totalSheet.getLastRow() - 1, totalSheet.getLastColumn()).clearContent();
+      }
+      totalSheet.getRange(2, 1, updated.length, updated[0].length).setValues(updated);
     } catch (err) {
       Logger.log("❌ total_nm 처리 에러: " + err.message);
     }

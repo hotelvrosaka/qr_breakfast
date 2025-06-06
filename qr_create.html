@@ -53,7 +53,10 @@
 
         <label>チェックアウト日</label>
         <input type="date" id="checkOut" autocomplete="off" required>
-        <label>朝食</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <label style="margin: 0;">朝食</label>
+          <button type="button" id="roomOnlyListBtn" style="padding: 6px 12px; width: auto; min-width: 60px; font-size: 14px;">Room Only リスト</button>
+        </div>
         <div class="breakfast-toggle">
           <div class="toggle-option" data-value="O">O</div>
           <div class="toggle-option" data-value="X">X</div>

@@ -71,6 +71,10 @@
 
         <label>支払額</label>
         <input type="text" id="payment" autocomplete="off">
+        <div class="vertical-buttons" style="margin-top: 10px;">
+          <button type="button" id="memoButton">メモ</button>
+          <button type="button" id="groupListButton">団体リスト</button>
+        </div>
 
       </form>
 
@@ -101,6 +105,12 @@
       <button onclick="closeSelectPopup()">キャンセル</button>
     </div>
   </div>
-  
+  <div id="memoPopup" class="overlay" style="display: none;" onclick="if (event.target.id === 'memoPopup') this.style.display='none'">
+    <div class="popup" style="max-height: 80vh; overflow-y: auto;">
+      <div id="memoPopupContent" style="white-space: pre-wrap; font-size: 16px;"></div>
+      <button onclick="document.getElementById('memoPopup').style.display='none'">閉じる</button>
+    </div>
+  </div>
+
 </body>
 </html>

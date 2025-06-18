@@ -335,6 +335,89 @@ window.handleRoomSearchResult = function(response) {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ✅ メモボタンのポップアップ表示
+  const memoBtn = document.getElementById("memoButton");
+  if (memoBtn) {
+    memoBtn.addEventListener("click", () => {
+      if (!cachedGuestList || cachedGuestList.length === 0) {
+        alert("ゲストデータが読み込まれていません。");
+        return;
+      }
+
+      let content = "";
+      cachedGuestList
+        .filter(g => g.memo?.trim())
+        .sort((a, b) => parseInt(a.room || "0") - parseInt(b.room || "0"))
+        .forEach(g => {
+          const memo = g.memo.trim();
+          const name = g.name || "";
+          const checkIn = g.checkIn || "";
+          const checkOut = g.checkOut || "";
+          const room = g.room || "";
+          const reservation = (g.reservation || "").split(/[-_]/)[0];
+
+          content += `📝 #${room} ${name}（${checkIn} ~ ${checkOut}）/ ${reservation}\n${memo}\n\n`;
+        });
+
+      const popupContent = document.getElementById("memoPopupContent");
+      popupContent.textContent = "";
+      document.getElementById("memoPopup").style.display = "flex";
+      popupContent.scrollTop = 0;
+      popupContent.textContent = content.trim();
+    });
+  }
+  // ✅ 団体リストボタンのポップアップ表示
+  const groupBtn = document.getElementById("groupListButton");
+  if (groupBtn) {
+    groupBtn.addEventListener("click", () => {
+      if (!cachedGuestList || cachedGuestList.length === 0) {
+        alert("ゲストデータが読み込まれていません。");
+        return;
+      }
+
+      // Count base reservation numbers
+      const groupMap = {};
+      cachedGuestList.forEach(g => {
+        const key = (g.reservation || "").split(/[-_]/)[0];
+        if (!key) return;
+        if (!groupMap[key]) groupMap[key] = [];
+        groupMap[key].push(g);
+      });
+
+      const groups = Object.entries(groupMap)
+        .filter(([_, members]) => members.length > 1)
+        .map(([key, members]) => {
+          const earliestCheckIn = members.reduce((min, g) => (!min || g.checkIn < min ? g.checkIn : min), null);
+          return { key, members, checkIn: earliestCheckIn };
+        })
+        .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
+      if (groups.length === 0) {
+        alert("一致する団体予約が見つかりません。");
+        return;
+      }
+
+      let content = "";
+      groups.forEach(group => {
+        content += `🔗 団体予約：${group.key}\n`;
+        group.members
+          .sort((a, b) => parseInt(a.room || "0") - parseInt(b.room || "0"))
+          .forEach(g => {
+            const room = g.room || "";
+            const name = g.name || "";
+            const checkIn = g.checkIn || "";
+            const checkOut = g.checkOut || "";
+            content += `#${room} ${name}（${checkIn} ~ ${checkOut}）\n`;
+          });
+        content += `\n`;
+      });
+
+      const popupContent = document.getElementById("memoPopupContent");
+      popupContent.textContent = "";
+      document.getElementById("memoPopup").style.display = "flex";
+      popupContent.scrollTop = 0;
+      popupContent.textContent = content.trim();
+    });
+  }
   const SHEET_NAME_SEARCH_API = getSheetApiUrl();
 
   if (location.pathname.includes("qr_create.html")) {

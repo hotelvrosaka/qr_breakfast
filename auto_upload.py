@@ -158,7 +158,7 @@ def process_and_upload():
         .tolist()
     )
 
-    GAS_URL = "https://script.google.com/macros/s/AKfycbxxesJZOVYeHj-6TiL08RSdMdb0b1ixxCCx-IMlvvlAfYfibPQaRMwDAZPScolNgK962g/exec"
+    GAS_URL = "https://script.google.com/macros/s/AKfycbxYPdgywAoaeBPlJUKcTY-SOAoqqheYbMghYD7yOgmsEJ037ahPX2OIDwA46zw7bfOzlw/exec"
     upload_payload = {
         "rows": [row.split(",") for row in rows],
         "roomOnly": ",".join(room_only_rooms)
@@ -171,7 +171,7 @@ def process_and_upload():
         response = requests.post(GAS_URL, headers=headers, json=upload_payload, timeout=10)
         print("📥 응답 코드:", response.status_code)
         print("📥 응답 텍스트:", response.text)
-        if response.status_code == 200:
+        if response.status_code == 200: 
             show_message("成功", "お客様情報を更新しました。")
         else:
             show_message("失敗", f"❌ ステータスコード: {response.status_code}")
